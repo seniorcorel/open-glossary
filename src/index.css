@@ -1,0 +1,28 @@
+@import "tailwindcss";
+@import "flag-icons/css/flag-icons.min.css";
+
+@theme {
+  --color-cloud: #F9F9F9;
+  --color-soft-gray: #D9D9D9;
+  --color-charcoal: #333333;
+  --color-lavender: #E6E6FA;
+  --color-lavender-dark: #C5C5E8;
+  --color-mint: #AAF0D1;
+  --color-mint-dark: #7DE0B3;
+  --color-teal: #008080;
+  --color-teal-light: #00A3A3;
+  --color-coral: #FF6B6B;
+  --color-coral-light: #FF8A8A;
+  --color-peach: #FFDAB9;
+
+  --animate-slide-in: slide-in 0.25s ease-out;
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
