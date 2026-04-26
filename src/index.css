@@ -2,27 +2,70 @@
 @import "flag-icons/css/flag-icons.min.css";
 
 @theme {
-  --color-cloud: #F9F9F9;
-  --color-soft-gray: #D9D9D9;
-  --color-charcoal: #333333;
-  --color-lavender: #E6E6FA;
-  --color-lavender-dark: #C5C5E8;
-  --color-mint: #AAF0D1;
-  --color-mint-dark: #7DE0B3;
-  --color-teal: #008080;
-  --color-teal-light: #00A3A3;
-  --color-coral: #FF6B6B;
-  --color-coral-light: #FF8A8A;
-  --color-peach: #FFDAB9;
+  /* Warm editorial palette */
+  --color-ivory: #FAF7F2;
+  --color-cream: #F3EDE4;
+  --color-sand: #E8E0D4;
+  --color-warm-gray: #C4BAA8;
+  --color-stone: #9A8E7E;
+  --color-walnut: #6B5E4F;
+  --color-espresso: #3D3229;
+  --color-ink: #1A1612;
 
-  --animate-slide-in: slide-in 0.25s ease-out;
+  /* Accent — muted terracotta & sage */
+  --color-terracotta: #B8705A;
+  --color-terracotta-light: #D4917B;
+  --color-sage: #7A8B6F;
+  --color-sage-light: #9AAD8E;
+  --color-ochre: #C49A3C;
+  --color-ochre-light: #D9B96A;
+  --color-burgundy: #7A3B3B;
+
+  /* Functional */
+  --color-approve: #6B8F5E;
+  --color-reject: #A85454;
+
+  /* Fonts */
+  --font-serif: "Playfair Display", "Georgia", serif;
+  --font-sans: "Inter", "Helvetica Neue", sans-serif;
+
+  /* Animation */
+  --animate-slide-in: slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-fade-in: fade-in 0.4s ease-out;
 }
 
 @keyframes slide-in {
-  from {
-    transform: translateX(100%);
-  }
-  to {
-    transform: translateX(0);
-  }
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Base */
+body {
+  font-family: var(--font-sans);
+  color: var(--color-espresso);
+  background-color: var(--color-ivory);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Serif headings */
+h1, h2, h3 {
+  font-family: var(--font-serif);
+}
+
+/* Refined scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-sand); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-warm-gray); }
+
+/* Selection */
+::selection {
+  background: var(--color-terracotta-light);
+  color: white;
 }

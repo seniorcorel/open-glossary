@@ -3,6 +3,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useLocale, UI_LOCALES } from "../contexts/LocaleContext";
 import Flag from "./Flag";
 import Logo from "./Logo";
+import Icon from "./Icon";
 import { useState, useEffect } from "react";
 
 export default function Navbar() {
@@ -12,50 +13,44 @@ export default function Navbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const location = useLocation();
 
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMobileOpen(false);
-    setUserMenuOpen(false);
-  }, [location.pathname]);
-
-  // Prevent body scroll when mobile menu is open
+  useEffect(() => { setMobileOpen(false); setUserMenuOpen(false); }, [location.pathname]);
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [mobileOpen]);
 
   const navLinks = [
-    { to: "/", label: t("nav.explore"), icon: "🌍", show: true },
-    { to: "/favorites", label: t("nav.favorites"), icon: "❤️", show: !!user },
-    { to: "/new", label: t("nav.new"), icon: "✍️", show: !!user },
-    { to: "/moderate", label: t("nav.moderate"), icon: "🛡️", show: isModerator },
-    { to: "/admin", label: t("nav.admin"), icon: "⚙️", show: isAdmin },
+    { to: "/", label: t("nav.explore"), icon: "globe", show: true },
+    { to: "/favorites", label: t("nav.favorites"), icon: "heart", show: !!user },
+    { to: "/new", label: t("nav.new"), icon: "plus", show: !!user },
+    { to: "/moderate", label: t("nav.moderate"), icon: "shield", show: isModerator },
+    { to: "/admin", label: t("nav.admin"), icon: "settings", show: isAdmin },
+    { to: "/profile", label: t("nav.profile"), icon: "user", show: !!user },
   ].filter((l) => l.show);
 
   const isActive = (path: string) => location.pathname === path;
 
   return (
     <>
-      <nav className="sticky top-0 z-50 backdrop-blur-xl bg-cloud/80 border-b border-soft-gray/40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 shrink-0">
-            <Logo size={32} />
-            <span className="text-lg font-bold bg-gradient-to-r from-teal to-teal-light bg-clip-text text-transparent hidden xs:inline">
+      <nav className="sticky top-0 z-50 backdrop-blur-xl bg-ivory/90 border-b border-sand/60">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-4 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-3 shrink-0">
+            <Logo size={30} />
+            <span className="font-serif text-lg font-semibold text-espresso tracking-wide">
               Open Glossary
             </span>
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-1 mr-auto ml-8">
+          <div className="hidden md:flex items-center gap-6 mr-auto ml-12">
             {navLinks.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
-                className={`px-3 py-1.5 text-sm rounded-lg transition-all ${
+                className={`text-[13px] tracking-wide uppercase transition-all border-b-2 pb-0.5 ${
                   isActive(link.to)
-                    ? "text-teal bg-lavender/30 font-medium"
-                    : "text-charcoal/60 hover:text-teal hover:bg-lavender/20"
+                    ? "text-espresso border-terracotta font-medium"
+                    : "text-stone border-transparent hover:text-espresso hover:border-sand"
                 }`}
               >
                 {link.label}
@@ -63,16 +58,15 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* Right side */}
-          <div className="flex items-center gap-2">
-            {/* Locale switcher - compact on mobile */}
-            <div className="hidden sm:flex items-center bg-soft-gray/30 rounded-lg p-0.5">
+          <div className="flex items-center gap-3">
+            {/* Locale */}
+            <div className="hidden sm:flex items-center gap-0.5 border border-sand/60 rounded p-0.5">
               {UI_LOCALES.map((l) => (
                 <button
                   key={l.code}
                   onClick={() => setLocale(l.code)}
                   className={`px-1.5 py-1 rounded-md transition-all flex items-center ${
-                    locale === l.code ? "bg-white shadow-sm" : "hover:bg-soft-gray/50"
+                    locale === l.code ? "bg-cream shadow-sm" : "hover:bg-sand/30"
                   }`}
                   title={l.label}
                 >
@@ -81,28 +75,26 @@ export default function Navbar() {
               ))}
             </div>
 
-            {/* User avatar / Sign in - desktop */}
+            {/* User — desktop */}
             {user ? (
               <div className="relative hidden md:block">
-                <button
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center gap-2 hover:bg-lavender/20 rounded-full p-1 pr-3 transition-all"
-                >
-                  <img src={user.photoURL ?? ""} alt="" className="w-8 h-8 rounded-full ring-2 ring-lavender" />
-                  <span className="text-sm text-charcoal">{user.displayName?.split(" ")[0]}</span>
+                <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="flex items-center gap-2 hover:bg-cream rounded-full p-1 pr-3 transition-all">
+                  <img src={user.photoURL ?? ""} alt="" className="w-8 h-8 rounded-full ring-1 ring-sand" />
+                  <span className="text-sm text-walnut">{profile?.username ? `@${profile.username}` : user.displayName?.split(" ")[0]}</span>
                 </button>
                 {userMenuOpen && (
                   <>
                     <div className="fixed inset-0" onClick={() => setUserMenuOpen(false)} />
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-soft-gray/40 py-1 z-50">
-                      <div className="px-4 py-2 border-b border-soft-gray/30">
-                        <p className="text-sm font-medium text-charcoal">{user.displayName}</p>
-                        <p className="text-xs text-charcoal/40">{profile?.role}</p>
+                    <div className="absolute right-0 mt-2 w-52 bg-white rounded shadow-lg border border-sand/40 py-1 z-50">
+                      <div className="px-4 py-3 border-b border-sand/30">
+                        <p className="text-sm font-medium text-espresso">{user.displayName}</p>
+                        {profile?.username && <p className="text-xs text-terracotta">@{profile.username}</p>}
+                        <p className="text-xs text-stone italic">{profile?.role}</p>
                       </div>
-                      <button
-                        onClick={() => { logout(); setUserMenuOpen(false); }}
-                        className="w-full text-left px-4 py-2 text-sm text-coral hover:bg-coral/5"
-                      >
+                      <Link to="/profile" onClick={() => setUserMenuOpen(false)} className="block px-4 py-2.5 text-sm text-walnut hover:bg-cream/60 transition-all">
+                        {t("nav.profile")}
+                      </Link>
+                      <button onClick={() => { logout(); setUserMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-burgundy hover:bg-cream/60 transition-all">
                         {t("nav.sign_out")}
                       </button>
                     </div>
@@ -110,120 +102,91 @@ export default function Navbar() {
                 )}
               </div>
             ) : (
-              <button
-                onClick={signInWithGoogle}
-                className="hidden md:block bg-gradient-to-r from-teal to-teal-light text-white px-4 py-2 rounded-xl text-sm font-medium hover:shadow-lg hover:shadow-teal/20 transition-all active:scale-95"
-              >
+              <button onClick={signInWithGoogle} className="hidden md:block bg-espresso text-ivory px-5 py-2 rounded text-sm font-medium tracking-wide hover:bg-ink transition-all">
                 {t("nav.sign_in")}
               </button>
             )}
 
-            {/* Hamburger button - mobile only */}
+            {/* Hamburger */}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden flex flex-col items-center justify-center w-10 h-10 rounded-xl hover:bg-lavender/20 transition-all"
-              aria-label="Toggle menu"
+              className="md:hidden w-10 h-10 flex items-center justify-center rounded hover:bg-cream transition-all"
+              aria-label="Menu"
               aria-expanded={mobileOpen}
             >
-              <span className={`block w-5 h-0.5 bg-charcoal rounded-full transition-all duration-300 ${mobileOpen ? "rotate-45 translate-y-[3px]" : ""}`} />
-              <span className={`block w-5 h-0.5 bg-charcoal rounded-full transition-all duration-300 mt-1 ${mobileOpen ? "opacity-0" : ""}`} />
-              <span className={`block w-5 h-0.5 bg-charcoal rounded-full transition-all duration-300 mt-1 ${mobileOpen ? "-rotate-45 -translate-y-[7px]" : ""}`} />
+              <Icon name={mobileOpen ? "close" : "menu"} size={22} className="text-espresso" />
             </button>
           </div>
         </div>
       </nav>
 
-      {/* Mobile slide-over menu */}
+      {/* Mobile panel */}
       {mobileOpen && (
         <div className="fixed inset-0 z-[60] md:hidden">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-charcoal/40 backdrop-blur-sm"
-            onClick={() => setMobileOpen(false)}
-          />
-
-          {/* Panel */}
-          <div className="absolute right-0 top-0 h-full w-72 bg-white shadow-2xl flex flex-col animate-slide-in">
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-soft-gray/30">
-              <div className="flex items-center gap-2">
-                <Logo size={28} />
-                <span className="font-bold text-teal">Open Glossary</span>
+          <div className="absolute inset-0 bg-ink/30 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+          <div className="absolute right-0 top-0 h-full w-72 bg-ivory shadow-2xl flex flex-col animate-slide-in">
+            <div className="flex items-center justify-between px-5 py-5 border-b border-sand/40">
+              <div className="flex items-center gap-2.5">
+                <Logo size={26} />
+                <span className="font-serif font-semibold text-espresso">Open Glossary</span>
               </div>
-              <button
-                onClick={() => setMobileOpen(false)}
-                className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-lavender/20 transition-all"
-                aria-label="Close menu"
-              >
-                <span className="text-charcoal/60 text-lg">✕</span>
+              <button onClick={() => setMobileOpen(false)} className="w-8 h-8 flex items-center justify-center rounded hover:bg-cream" aria-label="Close">
+                <Icon name="close" size={18} className="text-stone" />
               </button>
             </div>
 
-            {/* User info */}
             {user && (
-              <div className="flex items-center gap-3 px-5 py-4 border-b border-soft-gray/20 bg-lavender/10">
-                <img src={user.photoURL ?? ""} alt="" className="w-10 h-10 rounded-full ring-2 ring-lavender" />
+              <div className="flex items-center gap-3 px-5 py-4 border-b border-sand/20 bg-cream/40">
+                <img src={user.photoURL ?? ""} alt="" className="w-10 h-10 rounded-full ring-1 ring-sand" />
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-charcoal truncate">{user.displayName}</p>
-                  <p className="text-xs text-charcoal/40">{profile?.role}</p>
+                  <p className="text-sm font-medium text-espresso truncate">{user.displayName}</p>
+                  {profile?.username && <p className="text-xs text-terracotta">@{profile.username}</p>}
+                  <p className="text-xs text-stone italic">{profile?.role}</p>
                 </div>
               </div>
             )}
 
-            {/* Nav links */}
-            <div className="flex-1 overflow-y-auto py-3">
+            <div className="flex-1 overflow-y-auto py-4">
               {navLinks.map((link) => (
                 <Link
                   key={link.to}
                   to={link.to}
                   onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3 px-5 py-3 text-sm transition-all ${
+                  className={`flex items-center gap-3 px-6 py-3 text-sm tracking-wide transition-all ${
                     isActive(link.to)
-                      ? "text-teal bg-lavender/20 font-medium border-r-2 border-teal"
-                      : "text-charcoal/70 hover:bg-lavender/10 hover:text-teal"
+                      ? "text-espresso bg-cream/60 border-r-2 border-terracotta font-medium"
+                      : "text-walnut hover:bg-cream/40 hover:text-espresso"
                   }`}
                 >
-                  <span className="text-base">{link.icon}</span>
+                  <Icon name={link.icon} size={18} className={isActive(link.to) ? "text-terracotta" : "text-stone"} />
                   {link.label}
                 </Link>
               ))}
             </div>
 
-            {/* Locale switcher */}
-            <div className="px-5 py-3 border-t border-soft-gray/20">
-              <p className="text-xs text-charcoal/40 mb-2">🌐 {t("nav.language") || "Language"}</p>
+            <div className="px-5 py-3 border-t border-sand/30">
               <div className="flex flex-wrap gap-1.5">
                 {UI_LOCALES.map((l) => (
                   <button
                     key={l.code}
                     onClick={() => setLocale(l.code)}
-                    className={`px-2.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 text-xs ${
-                      locale === l.code
-                        ? "bg-teal text-white shadow-sm"
-                        : "bg-cloud text-charcoal/60 hover:bg-soft-gray/30"
+                    className={`px-2.5 py-1.5 rounded transition-all flex items-center gap-1.5 text-xs ${
+                      locale === l.code ? "bg-espresso text-ivory" : "bg-cream text-walnut hover:bg-sand/40"
                     }`}
                   >
-                    <Flag code={l.code} className="text-xs" />
-                    {l.label}
+                    <Flag code={l.code} className="text-xs" /> {l.label}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Sign in / Sign out */}
-            <div className="px-5 py-4 border-t border-soft-gray/20">
+            <div className="px-5 py-4 border-t border-sand/30">
               {user ? (
-                <button
-                  onClick={() => { logout(); setMobileOpen(false); }}
-                  className="w-full py-2.5 rounded-xl text-sm font-medium text-coral border border-coral/20 hover:bg-coral/5 transition-all"
-                >
+                <button onClick={() => { logout(); setMobileOpen(false); }} className="w-full py-2.5 rounded text-sm text-burgundy border border-burgundy/20 hover:bg-burgundy/5 transition-all">
                   {t("nav.sign_out")}
                 </button>
               ) : (
-                <button
-                  onClick={() => { signInWithGoogle(); setMobileOpen(false); }}
-                  className="w-full py-2.5 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-teal to-teal-light hover:shadow-lg transition-all"
-                >
+                <button onClick={() => { signInWithGoogle(); setMobileOpen(false); }} className="w-full py-2.5 rounded text-sm text-ivory bg-espresso hover:bg-ink transition-all">
                   {t("nav.sign_in")}
                 </button>
               )}

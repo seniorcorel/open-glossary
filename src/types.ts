@@ -11,10 +11,17 @@ export const ENTRY_TYPES: { code: EntryType; icon: string }[] = [
   { code: "proverb", icon: "📜" },
 ];
 
+export type WordType = "noun" | "verb" | "adjective" | "adverb" | "pronoun" | "preposition" | "conjunction" | "interjection" | "phrase" | "other";
+
+export const WORD_TYPES: WordType[] = [
+  "noun", "verb", "adjective", "adverb", "pronoun", "preposition", "conjunction", "interjection", "phrase", "other",
+];
+
 export interface Word {
   id: string;
   term: string;
   entryType: EntryType;
+  wordType?: WordType;
   language: string;
   translation: string;
   translations: Record<string, string>;
@@ -49,6 +56,7 @@ export interface Suggestion {
   wordTerm: string;
   field: string;
   value: string;
+  changes?: Record<string, any>;
   reason: string;
   status: "pending" | "approved" | "rejected";
   createdBy: string;
@@ -60,6 +68,7 @@ export interface Suggestion {
 
 export interface UserProfile {
   uid: string;
+  username?: string;
   displayName: string;
   email: string;
   photoURL: string | null;

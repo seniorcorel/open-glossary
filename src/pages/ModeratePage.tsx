@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
-import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { useLocale } from "../contexts/LocaleContext";
 import type { Word, Suggestion, Comment } from "../types";
 import { LANGUAGES } from "../types";
 import Flag from "../components/Flag";
+import Icon from "../components/Icon";
 import WordCard from "../components/WordCard";
 import EditWordModal from "../components/EditWordModal";
+import ConfirmModal from "../components/ConfirmModal";
 
 export default function ModeratePage() {
   const { user, profile, isModerator } = useAuth();
@@ -18,7 +20,7 @@ export default function ModeratePage() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"words" | "suggestions" | "comments">("words");
   const [editingWord, setEditingWord] = useState<Word | null>(null);
-
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const modLangs = profile?.moderatorLanguages ?? [];
   const isAdmin = profile?.role === "admin";
 
@@ -26,10 +28,7 @@ export default function ModeratePage() {
     if (!isModerator) return;
     const unsub1 = onSnapshot(query(collection(db, "words"), where("status", "==", "pending")), (snap) => {
       let all = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Word));
-      // Filter by moderator languages (admins see all)
-      if (!isAdmin && modLangs.length > 0) {
-        all = all.filter((w) => modLangs.includes(w.language));
-      }
+      if (!isAdmin && modLangs.length > 0) all = all.filter((w) => modLangs.includes(w.language));
       setWords(all.sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0)));
       setLoading(false);
     });
@@ -42,37 +41,32 @@ export default function ModeratePage() {
     return () => { unsub1(); unsub2(); unsub3(); };
   }, [isModerator, isAdmin, modLangs.join(",")]);
 
-  async function handleModerateWord(id: string, status: "approved" | "rejected") {
+  async function moderate(col: string, id: string, status: "approved" | "rejected") {
     if (!user) return;
-    await updateDoc(doc(db, "words", id), { status, moderatedBy: user.uid, moderatedAt: serverTimestamp() });
-  }
-  async function handleModerateSuggestion(id: string, status: "approved" | "rejected") {
-    if (!user) return;
-    await updateDoc(doc(db, "suggestions", id), { status, moderatedBy: user.uid, moderatedAt: serverTimestamp() });
-  }
-  async function handleModerateComment(id: string, status: "approved" | "rejected") {
-    if (!user) return;
-    await updateDoc(doc(db, "comments", id), { status, moderatedBy: user.uid, moderatedAt: serverTimestamp() });
+    await updateDoc(doc(db, col, id), { status, moderatedBy: user.uid, moderatedAt: serverTimestamp() });
   }
 
-  if (!isModerator) {
-    return <div className="max-w-xl mx-auto px-4 py-20 text-center"><p className="text-5xl mb-4">🔒</p><p className="text-charcoal/50 text-lg">{t("moderate.no_access")}</p></div>;
-  }
+  if (!isModerator) return (
+    <div className="max-w-xl mx-auto px-5 py-24 text-center">
+      <Icon name="shield" size={48} className="mx-auto text-sand mb-4" />
+      <p className="text-walnut text-lg font-serif">{t("moderate.no_access")}</p>
+    </div>
+  );
 
   const tabs = [
-    { id: "words" as const, label: t("moderate.words"), count: words.length, icon: "📝" },
-    { id: "suggestions" as const, label: t("moderate.suggestions"), count: suggestions.length, icon: "💡" },
-    { id: "comments" as const, label: t("moderate.comments"), count: comments.length, icon: "💬" },
+    { id: "words" as const, label: t("moderate.words"), count: words.length },
+    { id: "suggestions" as const, label: t("moderate.suggestions"), count: suggestions.length },
+    { id: "comments" as const, label: t("moderate.comments"), count: comments.length },
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-extrabold text-charcoal">{t("moderate.title")}</h1>
+    <div className="max-w-6xl mx-auto px-5 sm:px-8 py-12">
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="font-serif text-3xl font-semibold text-ink">{t("moderate.title")}</h1>
         {!isAdmin && modLangs.length > 0 && (
           <div className="flex items-center gap-1.5">
             {modLangs.map((code) => (
-              <span key={code} className="inline-flex items-center gap-1 text-xs bg-lavender/40 text-teal px-2 py-1 rounded-full">
+              <span key={code} className="inline-flex items-center gap-1 text-[11px] bg-cream text-walnut px-2.5 py-1 rounded border border-sand/30">
                 <Flag code={code} className="text-xs" /> {LANGUAGES.find((l) => l.code === code)?.name}
               </span>
             ))}
@@ -80,44 +74,43 @@ export default function ModeratePage() {
         )}
       </div>
 
-      <div className="flex gap-2 mb-8">
+      <div className="flex gap-1 mb-10 border-b border-sand/40">
         {tabs.map((tb) => (
-          <button key={tb.id} onClick={() => setTab(tb.id)} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${tab === tb.id ? "bg-teal text-white shadow-lg shadow-teal/20" : "bg-cloud text-charcoal/60 hover:bg-soft-gray/40"}`}>
-            {tb.icon} {tb.label}
-            {tb.count > 0 && <span className={`px-1.5 py-0.5 rounded-full text-xs ${tab === tb.id ? "bg-white/20" : "bg-lavender text-teal"}`}>{tb.count}</span>}
+          <button key={tb.id} onClick={() => setTab(tb.id)}
+            className={`px-5 py-3 text-sm tracking-wide transition-all border-b-2 -mb-px ${tab === tb.id ? "text-espresso border-terracotta font-medium" : "text-stone border-transparent hover:text-walnut"}`}>
+            {tb.label}
+            {tb.count > 0 && <span className={`ml-2 text-[11px] px-1.5 py-0.5 rounded-full ${tab === tb.id ? "bg-terracotta/10 text-terracotta" : "bg-cream text-stone"}`}>{tb.count}</span>}
           </button>
         ))}
       </div>
 
       {loading ? (
-        <div className="text-center py-20"><div className="inline-block w-8 h-8 border-4 border-lavender border-t-teal rounded-full animate-spin" /></div>
+        <div className="text-center py-24"><div className="inline-block w-8 h-8 border-2 border-sand border-t-terracotta rounded-full animate-spin" /></div>
       ) : tab === "words" ? (
         words.length === 0 ? (
-          <div className="text-center py-20"><p className="text-5xl mb-4">🎉</p><p className="text-charcoal/50">{t("moderate.no_words")}</p></div>
+          <div className="text-center py-24"><p className="text-walnut font-serif text-lg">{t("moderate.no_words")}</p></div>
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {words.map((word) => (
-              <WordCard key={word.id} word={word} showStatus onApprove={(id) => handleModerateWord(id, "approved")} onReject={(id) => handleModerateWord(id, "rejected")} onEdit={(w) => setEditingWord(w)} />
-            ))}
+            {words.map((w) => (<WordCard key={w.id} word={w} showStatus onApprove={(id) => moderate("words", id, "approved")} onReject={(id) => moderate("words", id, "rejected")} onEdit={(w) => setEditingWord(w)} onDelete={(id) => setDeleteId(id)} />))}
           </div>
         )
       ) : tab === "suggestions" ? (
         suggestions.length === 0 ? (
-          <div className="text-center py-20"><p className="text-5xl mb-4">🎉</p><p className="text-charcoal/50">{t("moderate.no_suggestions")}</p></div>
+          <div className="text-center py-24"><p className="text-walnut font-serif text-lg">{t("moderate.no_suggestions")}</p></div>
         ) : (
           <div className="space-y-3">
             {suggestions.map((s) => (
-              <div key={s.id} className="bg-white border border-soft-gray/50 rounded-2xl p-5 hover:shadow-md transition-all">
+              <div key={s.id} className="bg-white border border-sand/40 rounded p-6 hover:shadow-md transition-all">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <p className="text-sm text-charcoal/40 mb-1">{t("moderate.word_label")}: <span className="font-medium text-charcoal">{s.wordTerm}</span> · {t("moderate.field_label")}: <span className="font-medium text-teal">{s.field}</span></p>
-                    <p className="text-charcoal">{s.value}</p>
-                    {s.reason && <p className="text-sm text-charcoal/50 mt-1 italic">"{s.reason}"</p>}
-                    <p className="text-xs text-charcoal/30 mt-2">{t("word.by")} {s.createdByName}</p>
+                    <p className="text-[11px] text-stone tracking-wide uppercase mb-1">{t("moderate.word_label")}: <span className="text-espresso font-medium normal-case">{s.wordTerm}</span> · {t("moderate.field_label")}: <span className="text-terracotta font-medium normal-case">{s.field}</span></p>
+                    <p className="text-espresso mt-1">{s.value}</p>
+                    {s.reason && <p className="text-sm text-stone mt-2 italic">«{s.reason}»</p>}
+                    <p className="text-[11px] text-stone mt-3">{t("word.by")} {s.createdByName}</p>
                   </div>
                   <div className="flex gap-2 shrink-0">
-                    <button onClick={() => handleModerateSuggestion(s.id, "approved")} className="bg-teal hover:bg-teal-light text-white text-sm px-4 py-2 rounded-xl font-medium transition-all active:scale-95">✅</button>
-                    <button onClick={() => handleModerateSuggestion(s.id, "rejected")} className="bg-coral hover:bg-coral-light text-white text-sm px-4 py-2 rounded-xl font-medium transition-all active:scale-95">❌</button>
+                    <button onClick={() => moderate("suggestions", s.id, "approved")} className="bg-approve text-white text-sm px-4 py-2 rounded font-medium transition-all hover:opacity-90"><Icon name="check" size={16} /></button>
+                    <button onClick={() => moderate("suggestions", s.id, "rejected")} className="bg-reject text-white text-sm px-4 py-2 rounded font-medium transition-all hover:opacity-90"><Icon name="x" size={16} /></button>
                   </div>
                 </div>
               </div>
@@ -126,22 +119,22 @@ export default function ModeratePage() {
         )
       ) : (
         comments.length === 0 ? (
-          <div className="text-center py-20"><p className="text-5xl mb-4">🎉</p><p className="text-charcoal/50">{t("moderate.no_comments")}</p></div>
+          <div className="text-center py-24"><p className="text-walnut font-serif text-lg">{t("moderate.no_comments")}</p></div>
         ) : (
           <div className="space-y-3">
             {comments.map((c) => (
-              <div key={c.id} className="bg-white border border-soft-gray/50 rounded-2xl p-5 hover:shadow-md transition-all">
+              <div key={c.id} className="bg-white border border-sand/40 rounded p-6 hover:shadow-md transition-all">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 flex gap-3">
-                    {c.createdByPhoto && <img src={c.createdByPhoto} alt="" className="w-8 h-8 rounded-full" />}
+                    {c.createdByPhoto && <img src={c.createdByPhoto} alt="" className="w-8 h-8 rounded-full ring-1 ring-sand" />}
                     <div>
-                      <p className="text-sm font-medium text-charcoal">{c.createdByName}</p>
-                      <p className="text-charcoal/70 mt-0.5">{c.text}</p>
+                      <p className="text-sm font-medium text-espresso">{c.createdByName}</p>
+                      <p className="text-walnut/70 mt-0.5">{c.text}</p>
                     </div>
                   </div>
                   <div className="flex gap-2 shrink-0">
-                    <button onClick={() => handleModerateComment(c.id, "approved")} className="bg-teal hover:bg-teal-light text-white text-sm px-4 py-2 rounded-xl font-medium transition-all active:scale-95">✅</button>
-                    <button onClick={() => handleModerateComment(c.id, "rejected")} className="bg-coral hover:bg-coral-light text-white text-sm px-4 py-2 rounded-xl font-medium transition-all active:scale-95">❌</button>
+                    <button onClick={() => moderate("comments", c.id, "approved")} className="bg-approve text-white text-sm px-4 py-2 rounded font-medium transition-all hover:opacity-90"><Icon name="check" size={16} /></button>
+                    <button onClick={() => moderate("comments", c.id, "rejected")} className="bg-reject text-white text-sm px-4 py-2 rounded font-medium transition-all hover:opacity-90"><Icon name="x" size={16} /></button>
                   </div>
                 </div>
               </div>
@@ -149,8 +142,18 @@ export default function ModeratePage() {
           </div>
         )
       )}
-
       {editingWord && <EditWordModal word={editingWord} onClose={() => setEditingWord(null)} />}
+      {deleteId && (
+        <ConfirmModal
+          title={t("word.delete_title")}
+          message={t("word.delete_message")}
+          confirmLabel={t("word.delete")}
+          cancelLabel={t("suggest.cancel")}
+          onConfirm={async () => { if (deleteId) { await deleteDoc(doc(db, "words", deleteId)); } setDeleteId(null); }}
+          onCancel={() => setDeleteId(null)}
+          danger
+        />
+      )}
     </div>
   );
 }
