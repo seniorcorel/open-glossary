@@ -94,7 +94,7 @@ export default function NewWordPage() {
         </div>
         <div>
           <label className={label}>
-            <span className="inline-flex items-center gap-1.5">{t("new.translation")} <Flag code={(() => { const m: Record<string,string> = {it:"en",en:"es",es:"en",fr:"en",de:"en",pt:"en",ja:"en",ko:"en",zh:"en",ar:"en"}; return m[language] ?? "en"; })() } className="text-xs" /></span>
+            <span className="inline-flex items-center gap-1.5">{t("new.translation")} <Flag code="es" className="text-xs" /></span>
           </label>
           <input required value={translation} onChange={(e) => setTranslation(e.target.value)} className={ic} placeholder="Maybe / I wish" />
         </div>

@@ -20,10 +20,12 @@ export const WORD_TYPES: WordType[] = [
 export interface Word {
   id: string;
   term: string;
+  slug: string;
   entryType: EntryType;
   wordType?: WordType;
   language: string;
   translation: string;
+  translationLanguage: string;
   translations: Record<string, string>;
   meaning: string;
   examples: string[];
@@ -64,6 +66,49 @@ export interface Suggestion {
   createdAt: any;
   moderatedBy: string | null;
   moderatedAt: any;
+}
+
+export interface Portal {
+  id: string;
+  slug: string;
+  name: string;
+  domain?: string;
+  languages: string[];
+  defaultLanguage: string;
+  theme?: {
+    bg?: string;
+    bgSoft?: string;
+    line?: string;
+    muted?: string;
+    text?: string;
+    textStrong?: string;
+    accent?: string;
+    accentSoft?: string;
+    fontDisplay?: string;
+    fontBody?: string;
+    logo?: string;
+    tagline?: string;
+    quote?: string;
+    quoteAuthor?: string;
+  };
+  footer?: {
+    copyright?: string;
+    website?: string;
+    social?: {
+      facebook?: string;
+      instagram?: string;
+      blog?: string;
+      twitter?: string;
+      youtube?: string;
+    };
+  };
+  seo?: {
+    title?: string;
+    description?: string;
+    keywords?: string[];
+  };
+  createdBy: string;
+  createdAt: any;
 }
 
 export interface UserProfile {

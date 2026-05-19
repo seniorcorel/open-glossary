@@ -14,6 +14,7 @@ export default function EditWordModal({ word, onClose }: Props) {
   const [wordType, setWordType] = useState<WordType | "">(word.wordType ?? "");
   const [language, setLanguage] = useState(word.language);
   const [translation, setTranslation] = useState(word.translation);
+  const [translationLang, setTranslationLang] = useState(word.translationLanguage || "es");
   const [meaning, setMeaning] = useState(word.meaning ?? "");
   const [examples, setExamples] = useState((word.examples ?? []).join("\n"));
   const [references, setReferences] = useState((word.references ?? []).join("\n"));
@@ -24,7 +25,7 @@ export default function EditWordModal({ word, onClose }: Props) {
     e.preventDefault();
     setSaving(true);
     await updateDoc(doc(db, "words", word.id), {
-      term: term.trim(), entryType, wordType: wordType || null, language, translation: translation.trim(), meaning: meaning.trim(),
+      term: term.trim(), entryType, wordType: wordType || null, language, translation: translation.trim(), translationLanguage: translationLang, meaning: meaning.trim(),
       examples: examples.split("\n").map((s) => s.trim()).filter(Boolean),
       references: references.split("\n").map((s) => s.trim()).filter(Boolean),
       tags: tags.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean),
@@ -52,6 +53,7 @@ export default function EditWordModal({ word, onClose }: Props) {
               ))}
             </div>
           </div>
+          {entryType === "word" && (
           <div>
             <label className={label}>{t("new.word_type")}</label>
             <div className="flex flex-wrap gap-1.5">
@@ -63,11 +65,20 @@ export default function EditWordModal({ word, onClose }: Props) {
               ))}
             </div>
           </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div><label className={label}>{t("new.term")}</label><input required value={term} onChange={(e) => setTerm(e.target.value)} className={ic} /></div>
             <div><label className={label}>{t("new.language")}</label><select value={language} onChange={(e) => setLanguage(e.target.value)} className={ic}>{LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}</select></div>
           </div>
-          <div><label className={label}>{t("new.translation")}</label><input required value={translation} onChange={(e) => setTranslation(e.target.value)} className={ic} /></div>
+          <div>
+            <label className={label}>{t("new.translation")}</label>
+            <div className="flex gap-2">
+              <select value={translationLang} onChange={(e) => setTranslationLang(e.target.value)} className="border border-sand/50 rounded px-2 py-2.5 text-sm bg-ivory focus:outline-none focus:ring-1 focus:ring-terracotta-light/40 w-28 shrink-0">
+                {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}
+              </select>
+              <input required value={translation} onChange={(e) => setTranslation(e.target.value)} className={`flex-1 ${ic}`} />
+            </div>
+          </div>
           <div><label className={label}>{t("new.meaning")}</label><textarea value={meaning} onChange={(e) => setMeaning(e.target.value)} className={ic} rows={2} /></div>
           <div><label className={label}>{t("new.examples")}</label><textarea value={examples} onChange={(e) => setExamples(e.target.value)} className={ic} rows={2} /></div>
           <div><label className={label}>{t("new.references")}</label><textarea value={references} onChange={(e) => setReferences(e.target.value)} className={ic} rows={2} /></div>

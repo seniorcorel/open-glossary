@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 import type { UILocale } from "../types";
 import translations from "../i18n/translations";
 
@@ -32,8 +32,24 @@ function detectLocale(): UILocale {
   return "en";
 }
 
-export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<UILocale>(detectLocale);
+interface Props {
+  children: ReactNode;
+  forcedLocale?: string;
+}
+
+export function LocaleProvider({ children, forcedLocale }: Props) {
+  const [locale, setLocaleState] = useState<UILocale>(() => {
+    // If a forced locale is provided (single-language portal), use it
+    if (forcedLocale && translations[forcedLocale as UILocale]) return forcedLocale as UILocale;
+    return detectLocale();
+  });
+
+  // React to forcedLocale changes (after portal loads)
+  useEffect(() => {
+    if (forcedLocale && translations[forcedLocale as UILocale]) {
+      setLocaleState(forcedLocale as UILocale);
+    }
+  }, [forcedLocale]);
 
   const setLocale = useCallback((l: UILocale) => {
     setLocaleState(l);

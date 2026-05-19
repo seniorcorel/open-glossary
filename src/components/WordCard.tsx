@@ -14,10 +14,7 @@ const SPEECH_LOCALES: Record<string, string> = {
   zh: "zh-CN", ar: "ar-SA",
 };
 
-// Map language code to a default "translation language" (e.g. Italian words translate to English)
-const DEFAULT_TRANS_LANG: Record<string, string> = {
-  it: "en", en: "es", es: "en", fr: "en", de: "en", pt: "en", ja: "en", ko: "en", zh: "en", ar: "en",
-};
+const DEFAULT_TRANS_LANG = "es";
 
 interface Props {
   word: Word;
@@ -26,9 +23,10 @@ interface Props {
   onReject?: (id: string) => void;
   onEdit?: (word: Word) => void;
   onDelete?: (id: string) => void;
+  onClick?: (word: Word) => void;
 }
 
-export default function WordCard({ word, showStatus, onApprove, onReject, onEdit, onDelete }: Props) {
+export default function WordCard({ word, showStatus, onApprove, onReject, onEdit, onDelete, onClick }: Props) {
   const [showSuggest, setShowSuggest] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [speaking, setSpeaking] = useState(false);
@@ -38,9 +36,7 @@ export default function WordCard({ word, showStatus, onApprove, onReject, onEdit
   const isPending = word.status === "pending";
   const isRejected = word.status === "rejected";
   const fav = isFavorite(word.id);
-
-  // Determine the translation language flag
-  const transLangCode = DEFAULT_TRANS_LANG[word.language] ?? "en";
+  const transLangCode = word.translationLanguage || DEFAULT_TRANS_LANG;
 
   const speak = useCallback(() => {
     if (!("speechSynthesis" in window)) return;
@@ -57,15 +53,16 @@ export default function WordCard({ word, showStatus, onApprove, onReject, onEdit
     window.speechSynthesis.speak(utterance);
   }, [word.term, word.language]);
 
-  // Display name: prefer username
-  const displayAuthor = word.createdByName === "Il Glossario"
-    ? "Il Glossario"
-    : word.createdByName;
+  const displayAuthor = word.createdByName === "Il Glossario" ? "Il Glossario" : word.createdByName;
+
+  // Stop propagation helper for action buttons
+  const stop = (e: React.MouseEvent) => e.stopPropagation();
 
   return (
     <>
       <article
-        className={`group relative rounded border transition-all duration-300 hover:shadow-lg ${
+        onClick={onClick ? () => onClick(word) : undefined}
+        className={`group relative rounded border transition-all duration-300 hover:shadow-lg ${onClick ? "cursor-pointer" : ""} ${
           isPending
             ? "border-ochre-light/40 bg-cream/60 opacity-75"
             : isRejected
@@ -101,23 +98,22 @@ export default function WordCard({ word, showStatus, onApprove, onReject, onEdit
                 <Flag code={word.language} className="text-xs" /> {lang?.name}
               </span>
             </div>
-            <div className="flex items-center gap-1.5">
+            {/* Action icons — prominent style */}
+            <div className="flex items-center gap-1" onClick={stop}>
               {isModerator && onDelete && (
-                <button
-                  onClick={() => onDelete(word.id)}
-                  className="text-warm-gray hover:text-burgundy p-1 rounded hover:bg-cream transition-all"
-                  title={t("word.delete")}
-                >
-                  <Icon name="trash" size={15} />
+                <button onClick={() => onDelete(word.id)}
+                  className="w-8 h-8 flex items-center justify-center rounded bg-cream/80 border border-sand/30 text-stone hover:text-burgundy hover:border-burgundy/30 hover:bg-burgundy/5 transition-all"
+                  title={t("word.delete")}>
+                  <Icon name="trash" size={14} />
                 </button>
               )}
               {user && (
-                <button
-                  onClick={() => toggleFavorite(word.id)}
-                  className={`transition-all hover:scale-110 ${fav ? "text-terracotta" : "text-warm-gray hover:text-terracotta-light"}`}
-                  title={fav ? t("word.unfavorite") : t("word.favorite")}
-                >
-                  <Icon name={fav ? "heart-filled" : "heart"} size={18} />
+                <button onClick={() => toggleFavorite(word.id)}
+                  className={`w-8 h-8 flex items-center justify-center rounded border transition-all ${
+                    fav ? "bg-terracotta/10 border-terracotta/30 text-terracotta" : "bg-cream/80 border-sand/30 text-stone hover:text-terracotta hover:border-terracotta/30"
+                  }`}
+                  title={fav ? t("word.unfavorite") : t("word.favorite")}>
+                  <Icon name={fav ? "heart-filled" : "heart"} size={14} />
                 </button>
               )}
             </div>
@@ -126,13 +122,11 @@ export default function WordCard({ word, showStatus, onApprove, onReject, onEdit
           {/* Term */}
           <div className="flex items-baseline gap-3 mb-1">
             <h3 className="font-serif text-2xl font-semibold text-ink leading-tight">{word.term}</h3>
-            <button
-              onClick={speak}
-              className={`shrink-0 w-7 h-7 flex items-center justify-center rounded-full transition-all ${
-                speaking ? "bg-terracotta text-white" : "bg-cream text-stone hover:bg-sand/40 hover:text-walnut"
+            <button onClick={(e) => { stop(e); speak(); }}
+              className={`shrink-0 w-8 h-8 flex items-center justify-center rounded border transition-all ${
+                speaking ? "bg-terracotta border-terracotta text-white" : "bg-cream/80 border-sand/30 text-stone hover:text-walnut hover:border-warm-gray"
               }`}
-              title={t("word.listen")}
-            >
+              title={t("word.listen")}>
               <Icon name="speak" size={14} />
             </button>
           </div>
@@ -184,22 +178,26 @@ export default function WordCard({ word, showStatus, onApprove, onReject, onEdit
             </div>
           )}
 
-          {/* Footer */}
-          <div className="flex items-center justify-between pt-4 border-t border-sand/30">
+          {/* Footer actions */}
+          <div className="flex items-center justify-between pt-4 border-t border-sand/30" onClick={stop}>
             <span className="text-[11px] text-stone tracking-wide">{t("word.by")} {displayAuthor}</span>
-            <div className="flex items-center gap-2">
-              <button onClick={() => setExpanded(!expanded)} className="text-stone hover:text-walnut p-1.5 rounded hover:bg-cream transition-all" title="Comments">
-                <Icon name="comment" size={16} />
+            <div className="flex items-center gap-1.5">
+              <button onClick={() => setExpanded(!expanded)}
+                className="w-8 h-8 flex items-center justify-center rounded bg-cream/80 border border-sand/30 text-stone hover:text-walnut hover:border-warm-gray transition-all"
+                title={t("comments.title")}>
+                <Icon name="comment" size={14} />
               </button>
-              <button onClick={() => setShowSuggest(true)} className="text-stone hover:text-terracotta p-1.5 rounded hover:bg-cream transition-all" title={t("word.suggest")}>
-                <Icon name="lightbulb" size={16} />
+              <button onClick={() => setShowSuggest(true)}
+                className="w-8 h-8 flex items-center justify-center rounded bg-cream/80 border border-sand/30 text-stone hover:text-terracotta hover:border-terracotta/30 transition-all"
+                title={t("word.suggest")}>
+                <Icon name="lightbulb" size={14} />
               </button>
             </div>
           </div>
 
           {/* Moderation */}
           {onApprove && onReject && isPending && (
-            <div className="flex gap-2 mt-4">
+            <div className="flex gap-2 mt-4" onClick={stop}>
               {onEdit && (
                 <button onClick={() => onEdit(word)} className="flex-1 flex items-center justify-center gap-1.5 bg-cream hover:bg-sand/40 text-walnut text-sm py-2.5 rounded font-medium transition-all">
                   <Icon name="edit" size={15} />
@@ -215,7 +213,7 @@ export default function WordCard({ word, showStatus, onApprove, onReject, onEdit
           )}
 
           {/* Comments */}
-          {expanded && <Comments wordId={word.id} />}
+          {expanded && <div onClick={stop}><Comments wordId={word.id} /></div>}
         </div>
       </article>
       {showSuggest && <SuggestModal word={word} onClose={() => setShowSuggest(false)} />}

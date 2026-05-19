@@ -4,11 +4,13 @@ import { useLocale, UI_LOCALES } from "../contexts/LocaleContext";
 import Flag from "./Flag";
 import Logo from "./Logo";
 import Icon from "./Icon";
+import { usePortal } from "../contexts/PortalContext";
 import { useState, useEffect } from "react";
 
 export default function Navbar() {
   const { user, profile, signInWithGoogle, logout, isModerator, isAdmin } = useAuth();
   const { locale, setLocale, t } = useLocale();
+  const { portal } = usePortal();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const location = useLocation();
@@ -34,10 +36,14 @@ export default function Navbar() {
     <>
       <nav className="sticky top-0 z-50 backdrop-blur-xl bg-ivory/90 border-b border-sand/60">
         <div className="max-w-6xl mx-auto px-5 sm:px-8 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3 shrink-0">
-            <Logo size={30} />
-            <span className="font-serif text-lg font-semibold text-espresso tracking-wide">
-              Open Glossary
+          <Link to="/" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="flex items-center gap-3 shrink-0">
+            {portal.theme?.logo ? (
+              <img src={portal.theme.logo} alt="" className="w-8 h-8 rounded object-contain" />
+            ) : (
+              <Logo size={30} />
+            )}
+            <span className="font-serif text-lg font-semibold tracking-wide" style={{ color: "var(--portal-text-strong, var(--color-espresso))" }}>
+              {portal.name}
             </span>
           </Link>
 
@@ -59,7 +65,8 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Locale */}
+            {/* Locale — hide for single-language portals */}
+            {!portal.languages?.length || portal.languages.length > 1 ? (
             <div className="hidden sm:flex items-center gap-0.5 border border-sand/60 rounded p-0.5">
               {UI_LOCALES.map((l) => (
                 <button
@@ -74,6 +81,7 @@ export default function Navbar() {
                 </button>
               ))}
             </div>
+            ) : null}
 
             {/* User — desktop */}
             {user ? (
@@ -127,8 +135,12 @@ export default function Navbar() {
           <div className="absolute right-0 top-0 h-full w-72 bg-ivory shadow-2xl flex flex-col animate-slide-in">
             <div className="flex items-center justify-between px-5 py-5 border-b border-sand/40">
               <div className="flex items-center gap-2.5">
-                <Logo size={26} />
-                <span className="font-serif font-semibold text-espresso">Open Glossary</span>
+                {portal.theme?.logo ? (
+                  <img src={portal.theme.logo} alt="" className="w-7 h-7 rounded object-contain" />
+                ) : (
+                  <Logo size={26} />
+                )}
+                <span className="font-serif font-semibold text-espresso">{portal.name}</span>
               </div>
               <button onClick={() => setMobileOpen(false)} className="w-8 h-8 flex items-center justify-center rounded hover:bg-cream" aria-label="Close">
                 <Icon name="close" size={18} className="text-stone" />
@@ -164,6 +176,7 @@ export default function Navbar() {
               ))}
             </div>
 
+            {(!portal.languages?.length || portal.languages.length > 1) && (
             <div className="px-5 py-3 border-t border-sand/30">
               <div className="flex flex-wrap gap-1.5">
                 {UI_LOCALES.map((l) => (
@@ -179,6 +192,7 @@ export default function Navbar() {
                 ))}
               </div>
             </div>
+            )}
 
             <div className="px-5 py-4 border-t border-sand/30">
               {user ? (

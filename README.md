@@ -1,41 +1,113 @@
-# 📖 Glosario Colaborativo
+# 📖 Open Glossary
 
-Webapp colaborativa para compartir y descubrir palabras en diferentes idiomas.
+A community-driven multilingual glossary web app. Users can submit words, expressions, idioms, slang, and proverbs with translations, meanings, and examples. Includes Google auth, a moderation workflow, multi-language UI, and portal system for custom-branded instances.
+
+**Live:** [open-glossary.com](https://open-glossary.com)
+
+## Features
+
+- 🔐 Google authentication with unique usernames
+- ✍️ Submit words with type, translation, meaning, examples, tags
+- 🔊 Text-to-speech pronunciation for any language
+- 🛡️ Moderation workflow (approve/reject/edit)
+- 💬 Moderated comments on words
+- ❤️ Favorites system
+- 💡 Suggest changes to existing words
+- 📤 Share words as vertical story images with QR code
+- 🔍 Instant search with autocomplete
+- 🌍 Multi-language UI (EN, ES, IT, FR, PT)
+- 🏛️ Portal system: custom domains, branding, and language filtering
+- 📱 Fully responsive with mobile-first design
+- 🔤 Sticky alphabet navigation bar
+
+## Tech Stack
+
+- **Frontend:** React 19, TypeScript, Tailwind CSS 4, Vite
+- **Backend:** Firebase (Auth, Firestore, Hosting)
+- **Fonts:** Playfair Display (serif), Inter (sans)
+- **Icons:** Custom SVG icon system
 
 ## Setup
 
-### 1. Crear proyecto en Firebase
-
-1. Ve a [Firebase Console](https://console.firebase.google.com/)
-2. Crea un nuevo proyecto
-3. Activa **Authentication** → método **Google**
-4. Activa **Cloud Firestore** (modo producción)
-5. Copia las reglas de `firestore.rules` en la consola de Firestore
-6. En **Project Settings**, copia la configuración de tu app web
-
-### 2. Configurar variables de entorno
-
-Copia `.env.example` a `.env` y completa con tus credenciales de Firebase:
+### 1. Clone and install
 
 ```bash
-cp .env.example .env
+git clone https://github.com/your-repo/open-glossary.git
+cd open-glossary
+npm install
 ```
 
-### 3. Instalar y ejecutar
+### 2. Firebase project
+
+1. Create a project at [Firebase Console](https://console.firebase.google.com/)
+2. Enable **Authentication** → Google sign-in + Email/Password
+3. Enable **Cloud Firestore** (production mode)
+4. Copy Firestore rules from `firestore.rules`
+5. Copy your web app config
+
+### 3. Environment variables
+
+Create `.env`:
+
+```
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=...
+VITE_FIREBASE_PROJECT_ID=...
+VITE_FIREBASE_STORAGE_BUCKET=...
+VITE_FIREBASE_MESSAGING_SENDER_ID=...
+VITE_FIREBASE_APP_ID=...
+```
+
+### 4. Run locally
 
 ```bash
-npm install
 npm run dev
 ```
 
-### 4. Crear un moderador
+### 5. Deploy
 
-En la consola de Firebase → Firestore, busca tu usuario en la colección `users` y cambia el campo `role` de `"user"` a `"moderator"`.
+```bash
+npm run build
+npx firebase deploy
+```
 
-## Funcionalidades
+## Portal System
 
-- 🔐 Login con Google
-- ✍️ Envío de palabras/expresiones con traducción, significado, ejemplos, tags
-- 🛡️ Panel de moderación para aprobar/rechazar envíos
-- 🔍 Búsqueda y filtro por idioma
-- 📱 Diseño responsive
+Portals allow custom-branded instances sharing the same database:
+
+| Portal | Domain | Languages | Style |
+|--------|--------|-----------|-------|
+| Default | open-glossary.com | All | Editorial warm |
+| Il Laboratorio | glosario.illaboratorioitaliano.com | Italian only | Blue academic |
+
+Create portals in Firestore → `portals` collection. See `scripts/create-portals.ts`.
+
+## Scripts
+
+```bash
+npx tsx scripts/seed-words.ts          # Seed Italian words
+npx tsx scripts/add-slugs.ts           # Add URL slugs to words
+npx tsx scripts/translate-to-spanish.ts # Translate words to Spanish
+npx tsx scripts/create-portals.ts      # Create portal documents
+npx tsx scripts/update-lab-portal.ts   # Update lab portal theme
+```
+
+## Project Structure
+
+```
+src/
+├── components/     # UI components (WordCard, Navbar, modals, etc.)
+├── contexts/       # React contexts (Auth, Locale, Portal)
+├── i18n/           # Translations (5 languages)
+├── lib/            # Firebase config, utilities
+├── pages/          # Route pages
+└── types.ts        # TypeScript interfaces
+```
+
+## Version
+
+Current: **v1.1.0**
+
+## License
+
+MIT

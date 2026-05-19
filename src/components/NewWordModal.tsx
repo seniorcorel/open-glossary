@@ -3,14 +3,12 @@ import { collection, addDoc, serverTimestamp, query, where, getDocs } from "fire
 import { db } from "../lib/firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { useLocale } from "../contexts/LocaleContext";
+import { usePortal } from "../contexts/PortalContext";
+
+import { toSlug } from "../lib/slug";
 import { LANGUAGES, ENTRY_TYPES, WORD_TYPES, type EntryType, type WordType } from "../types";
 import type { Word } from "../types";
 import Icon from "./Icon";
-import Flag from "./Flag";
-
-const DEFAULT_TRANS_LANG: Record<string, string> = {
-  it: "en", en: "es", es: "en", fr: "en", de: "en", pt: "en", ja: "en", ko: "en", zh: "en", ar: "en",
-};
 
 const SHOW_WORD_TYPE: Set<EntryType> = new Set(["word"]);
 
@@ -19,12 +17,16 @@ interface Props { onClose: () => void; }
 export default function NewWordModal({ onClose }: Props) {
   const { user, profile, signInWithGoogle } = useAuth();
   const { t } = useLocale();
+  const { portal } = usePortal();
+  const singleLanguage = portal.languages.length === 1 ? portal.languages[0] : null;
+  
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [term, setTerm] = useState("");
   const [entryType, setEntryType] = useState<EntryType>("word");
   const [wordType, setWordType] = useState<WordType | "">("");
-  const [language, setLanguage] = useState("it");
+  const [language, setLanguage] = useState(singleLanguage || "it");
+  const [translationLang, setTranslationLang] = useState("es");
   const [translation, setTranslation] = useState("");
   const [meaning, setMeaning] = useState("");
   const [examples, setExamples] = useState("");
@@ -35,8 +37,6 @@ export default function NewWordModal({ onClose }: Props) {
   const [editingExisting, setEditingExisting] = useState<Word | null>(null);
   const [reason, setReason] = useState("");
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-
-  const transLang = DEFAULT_TRANS_LANG[language] ?? "en";
 
   // Search for duplicates when term or language changes
   useEffect(() => {
@@ -111,8 +111,8 @@ export default function NewWordModal({ onClose }: Props) {
         return;
       }
       await addDoc(collection(db, "words"), {
-        term: term.trim(), entryType, wordType: SHOW_WORD_TYPE.has(entryType) ? (wordType || null) : null,
-        language, translation: translation.trim(), translations: {},
+        term: term.trim(), slug: toSlug(term.trim()), entryType, wordType: SHOW_WORD_TYPE.has(entryType) ? (wordType || null) : null,
+        language, translation: translation.trim(), translationLanguage: translationLang, translations: {},
         meaning: meaning.trim(),
         examples: examples.split("\n").map((s) => s.trim()).filter(Boolean),
         references: [],
@@ -224,18 +224,25 @@ export default function NewWordModal({ onClose }: Props) {
                 </div>
                 <div>
                   <label className={label}>{t("new.language")}</label>
-                  <select value={language} onChange={(e) => setLanguage(e.target.value)} className={ic} disabled={!!editingExisting}>
-                    {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}
-                  </select>
+                  {singleLanguage ? (
+                    <p className="text-sm text-espresso py-2.5">{LANGUAGES.find(l => l.code === singleLanguage)?.name}</p>
+                  ) : (
+                    <select value={language} onChange={(e) => setLanguage(e.target.value)} className={ic} disabled={!!editingExisting}>
+                      {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}
+                    </select>
+                  )}
                 </div>
               </div>
 
-              {/* Translation with flag */}
+              {/* Translation with language selector */}
               <div>
-                <label className={label}>
-                  <span className="inline-flex items-center gap-1.5">{t("new.translation")} <Flag code={transLang} className="text-xs" /></span>
-                </label>
-                <input required={!editingExisting} value={translation} onChange={(e) => setTranslation(e.target.value)} className={ic} placeholder="Maybe / I wish" />
+                <label className={label}>{t("new.translation")}</label>
+                <div className="flex gap-2">
+                  <select value={translationLang} onChange={(e) => setTranslationLang(e.target.value)} className="border border-sand/50 rounded px-2 py-2.5 text-sm bg-ivory focus:outline-none focus:ring-1 focus:ring-terracotta-light/40 w-28 shrink-0">
+                    {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}
+                  </select>
+                  <input required={!editingExisting} value={translation} onChange={(e) => setTranslation(e.target.value)} className={`flex-1 ${ic}`} placeholder="Traducción..." />
+                </div>
               </div>
 
               <div><label className={label}>{t("new.meaning")}</label><textarea value={meaning} onChange={(e) => setMeaning(e.target.value)} className={ic} rows={2} /></div>

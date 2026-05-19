@@ -69,3 +69,19 @@ h1, h2, h3 {
   background: var(--color-terracotta-light);
   color: white;
 }
+
+/* Hide scrollbar for alphabet bar */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Prevent iOS zoom on input focus */
+@media screen and (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}

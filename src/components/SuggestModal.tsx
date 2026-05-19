@@ -4,15 +4,10 @@ import { db } from "../lib/firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { useLocale } from "../contexts/LocaleContext";
 import type { Word, EntryType, WordType } from "../types";
-import { ENTRY_TYPES, WORD_TYPES } from "../types";
-import Flag from "./Flag";
+import { ENTRY_TYPES, WORD_TYPES, LANGUAGES } from "../types";
 import Icon from "./Icon";
 
 interface Props { word: Word; onClose: () => void; }
-
-const DEFAULT_TRANS_LANG: Record<string, string> = {
-  it: "en", en: "es", es: "en", fr: "en", de: "en", pt: "en", ja: "en", ko: "en", zh: "en", ar: "en",
-};
 
 export default function SuggestModal({ word, onClose }: Props) {
   const { user, profile } = useAuth();
@@ -21,6 +16,7 @@ export default function SuggestModal({ word, onClose }: Props) {
   const [entryType, setEntryType] = useState<EntryType>(word.entryType ?? "word");
   const [wordType, setWordType] = useState<WordType | "">(word.wordType ?? "");
   const [translation, setTranslation] = useState(word.translation);
+  const [translationLang, setTranslationLang] = useState(word.translationLanguage || "es");
   const [meaning, setMeaning] = useState(word.meaning ?? "");
   const [examples, setExamples] = useState((word.examples ?? []).join("\n"));
   const [tags, setTags] = useState((word.tags ?? []).join(", "));
@@ -28,14 +24,13 @@ export default function SuggestModal({ word, onClose }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
 
-  const transLang = DEFAULT_TRANS_LANG[word.language] ?? "en";
-
   function getChanges(): Record<string, any> {
     const changes: Record<string, any> = {};
     if (term.trim() !== word.term) changes.term = term.trim();
     if (entryType !== (word.entryType ?? "word")) changes.entryType = entryType;
     if (wordType !== (word.wordType ?? "")) changes.wordType = wordType;
     if (translation.trim() !== word.translation) changes.translation = translation.trim();
+    if (translationLang !== (word.translationLanguage || "es")) changes.translationLanguage = translationLang;
     if (meaning.trim() !== (word.meaning ?? "")) changes.meaning = meaning.trim();
     const newExamples = examples.split("\n").map(s => s.trim()).filter(Boolean);
     if (JSON.stringify(newExamples) !== JSON.stringify(word.examples ?? [])) changes.examples = newExamples;
@@ -134,12 +129,15 @@ export default function SuggestModal({ word, onClose }: Props) {
                 <input value={term} onChange={(e) => setTerm(e.target.value)} className={ic} />
               </div>
 
-              {/* Translation with flag */}
+              {/* Translation with language selector */}
               <div>
-                <label className={label}>
-                  <span className="inline-flex items-center gap-1.5">{t("new.translation")} <Flag code={transLang} className="text-xs" /></span>
-                </label>
-                <input value={translation} onChange={(e) => setTranslation(e.target.value)} className={ic} />
+                <label className={label}>{t("new.translation")}</label>
+                <div className="flex gap-2">
+                  <select value={translationLang} onChange={(e) => setTranslationLang(e.target.value)} className="border border-sand/50 rounded px-2 py-2.5 text-sm bg-ivory focus:outline-none focus:ring-1 focus:ring-terracotta-light/40 w-28 shrink-0">
+                    {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}
+                  </select>
+                  <input value={translation} onChange={(e) => setTranslation(e.target.value)} className={`flex-1 ${ic}`} />
+                </div>
               </div>
 
               {/* Meaning */}
